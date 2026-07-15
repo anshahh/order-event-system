@@ -1,0 +1,106 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: events_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: eventuser
+      POSTGRES_PASSWORD: eventpass
+      POSTGRES_DB: eventstore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: order_queue
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  order-api:
+    build: ./order-api
+    container_name: order_api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DB_USER: eventuser
+      DB_PASSWORD: eventpass
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: eventstore
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      PORT: 8000
+    ports:
+      - "8000:8000"
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment_service
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DB_USER: eventuser
+      DB_PASSWORD: eventpass
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: eventstore
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      PORT: 8001
+    ports:
+      - "8001:8001"
+
+  shipping-service:
+    build: ./shipping-service
+    container_name: shipping_service
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DB_USER: eventuser
+      DB_PASSWORD: eventpass
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: eventstore
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      PORT: 8002
+    ports:
+      - "8002:8002"
+
+  projection-service:
+    build: ./projection-service
+    container_name: projection_service
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DB_USER: eventuser
+      DB_PASSWORD: eventpass
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: eventstore
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      PORT: 8003
+    ports:
+      - "8003:8003"
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      - order-api
+      - projection-service
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:

@@ -1,0 +1,14 @@
+node_modules/
+*.log
+.DS_Store
+
+# Environment files - never commit secrets
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+
+# k3s config backup (contains cluster credentials - keep this OUT of git)
+k3s-config.yaml
