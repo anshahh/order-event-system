@@ -81,6 +81,20 @@ async function applyEvent(event) {
       );
       break;
 
+    case 'OrderCancelled':
+      await pool.query(
+        `UPDATE order_state SET status = 'CANCELLED', updated_at = NOW() WHERE order_id = $1`,
+        [orderId]
+      );
+      break;
+
+    case 'RefundIssued':
+      await pool.query(
+        `UPDATE order_state SET status = 'REFUNDED', updated_at = NOW() WHERE order_id = $1`,
+        [orderId]
+      );
+      break;
+
     default:
       console.log(`Unhandled event type: ${eventType}`);
   }

@@ -56,7 +56,7 @@ async function handleOrderCreated(event) {
   console.log(`Processing payment for order ${orderId}...`);
 
   // Simulate a payment gateway - 80% success rate
-  const isSuccess = Math.random() < 0.8;
+  const isSuccess = true; // always succeed - failure simulation removed
 
   // Simulate network/processing delay
   await new Promise((resolve) => setTimeout(resolve, 1500));
