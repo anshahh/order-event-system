@@ -445,6 +445,20 @@ function MainApp({ token, user, onLogout }) {
   const [orders, setOrders] = useState([]);
   const [currentUser, setCurrentUser] = useState(user);
 
+  useEffect(() => {
+    fetch(`${ORDER_API}/my-orders`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data) => {
+        const restored = data.map((row) => ({
+          orderId: row.order_id,
+          productName: row.payload.productName,
+          quantity: row.payload.quantity,
+        }));
+        setOrders(restored);
+      })
+      .catch((err) => console.error(err));
+  }, [token]);
+
   function handleOrderPlaced(order) {
     setOrders((prev) => [...prev, order]);
   }
