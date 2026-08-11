@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: anshahh/frontend:v6
+          image: anshahh/frontend:v7
           imagePullPolicy: Always
           ports:
             - containerPort: 80
