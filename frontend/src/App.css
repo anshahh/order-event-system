@@ -469,3 +469,133 @@ button:disabled { opacity: 0.6; cursor: default; }
 .admin-product-row .bar-row { flex: 1; margin-bottom: 0; }
 
 h1, h2, h3 { color: #e5e7eb; }
+
+/* Order Support Chat Widget */
+.support-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  background: #4F63D2;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 99, 210, 0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.support-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(79, 99, 210, 0.5);
+}
+
+.support-panel {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 1000;
+  width: 340px;
+  max-width: calc(100vw - 48px);
+  height: 440px;
+  max-height: calc(100vh - 140px);
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #E7E7EE;
+}
+
+.support-header {
+  padding: 14px 18px;
+  background: #4F63D2;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.support-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.support-empty {
+  color: #8A8A99;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 30px;
+  line-height: 1.6;
+}
+
+.support-msg {
+  padding: 9px 13px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  max-width: 85%;
+  white-space: pre-wrap;
+}
+
+.support-msg.user {
+  background: #4F63D2;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.support-msg.assistant {
+  background: #F2F3F8;
+  color: #24242E;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.support-msg.assistant.error {
+  background: #FCE8EA;
+  color: #B8455A;
+}
+
+.support-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #E7E7EE;
+}
+
+.support-input-row input {
+  flex: 1;
+  border: 1px solid #E7E7EE;
+  border-radius: 18px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.support-input-row input:focus {
+  border-color: #4F63D2;
+}
+
+.support-input-row button {
+  background: #4F63D2;
+  color: white;
+  border: none;
+  border-radius: 18px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.support-input-row button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

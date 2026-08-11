@@ -4,6 +4,7 @@ import './App.css';
 const AUTH_API = import.meta.env.VITE_AUTH_API || 'http://localhost:8004';
 const ORDER_API = import.meta.env.VITE_ORDER_API || 'http://localhost:8000';
 const PROJECTION_API = import.meta.env.VITE_PROJECTION_API || 'http://localhost:8003';
+const SUPPORT_API = import.meta.env.VITE_SUPPORT_API || 'http://localhost:8007';
 
 const STATUS_STEPS = [
   { key: 'PENDING_PAYMENT', label: 'Order Placed' },
@@ -502,7 +503,68 @@ function MainApp({ token, user, onLogout }) {
         {tab === 'orders' && <MyOrdersTab orders={orders} token={token} />}
         {tab === 'profile' && <ProfileTab user={currentUser} token={token} onPhotoUpdated={handlePhotoUpdated} />}
       </main>
+      <SupportChat username={currentUser?.username} />
     </div>
+  );
+}
+
+
+function SupportChat({ username }) {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function send() {
+    const q = input.trim();
+    if (!q || loading) return;
+    setInput('');
+    setMessages((m) => [...m, { role: 'user', text: q }]);
+    setLoading(true);
+    try {
+      const res = await fetch(`${SUPPORT_API}/api/buyer/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, username }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Something went wrong');
+      setMessages((m) => [...m, { role: 'assistant', text: data.answer }]);
+    } catch (err) {
+      setMessages((m) => [...m, { role: 'assistant', text: 'Sorry, support is unavailable right now.', error: true }]);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <>
+      <button className="support-fab" onClick={() => setOpen(!open)} aria-label="Order support">
+        {open ? 'Close' : 'Support'}
+      </button>
+      {open && (
+        <div className="support-panel">
+          <div className="support-header">Order Support</div>
+          <div className="support-messages">
+            {messages.length === 0 && (
+              <div className="support-empty">Ask about your orders, shipping, or returns.</div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`support-msg ${m.role}${m.error ? ' error' : ''}`}>{m.text}</div>
+            ))}
+            {loading && <div className="support-msg assistant">...</div>}
+          </div>
+          <div className="support-input-row">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && send()}
+              placeholder="Ask a question..."
+            />
+            <button onClick={send} disabled={loading}>Send</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
