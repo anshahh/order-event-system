@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: anshahh/auth-service:v1
+          image: anshahh/auth-service:v2
           ports:
             - containerPort: 8004
           env:

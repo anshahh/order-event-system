@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: shipping-service
-          image: anshahh/shipping-service:v1
+          image: anshahh/shipping-service:v2
           ports:
             - containerPort: 8002
           env:

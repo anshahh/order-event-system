@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: projection-service
-          image: anshahh/projection-service:v1
+          image: anshahh/projection-service:v2
           ports:
             - containerPort: 8003
           env:
