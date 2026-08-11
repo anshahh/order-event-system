@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: order-api
-          image: anshahh/order-api:v2
+          image: anshahh/order-api:v3
           ports:
             - containerPort: 8000
           env:

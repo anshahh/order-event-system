@@ -122,10 +122,11 @@ app.post('/orders', requireAuth, async (req, res) => {
 app.get('/my-orders', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT DISTINCT ON (order_id) order_id, payload, created_at
-       FROM events
-       WHERE event_type = 'OrderCreated' AND payload->>'userId' = $1
-       ORDER BY order_id, created_at DESC`,
+      `SELECT DISTINCT ON (e.order_id) e.order_id, e.payload, e.created_at, os.status
+       FROM events e
+       LEFT JOIN order_state os ON os.order_id = e.order_id
+       WHERE e.event_type = 'OrderCreated' AND e.payload->>'userId' = $1
+       ORDER BY e.order_id, e.created_at DESC`,
       [req.userId]
     );
     res.json(result.rows);
