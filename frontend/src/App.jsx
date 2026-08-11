@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-const AUTH_API = 'http://localhost:8004';
-const ORDER_API = 'http://localhost:8010';
+const AUTH_API = import.meta.env.VITE_AUTH_API || 'http://localhost:8004';
+const ORDER_API = import.meta.env.VITE_ORDER_API || 'http://localhost:8000';
 const PROJECTION_API = 'http://localhost:8003';
 
 const STATUS_STEPS = [

@@ -1,8 +1,8 @@
 import './App.css';
 import { useState, useEffect } from 'react';
 
-const AUTH_API = 'http://localhost:8004';
-const ORDER_API = 'http://localhost:8010';
+const AUTH_API = import.meta.env.VITE_AUTH_API || 'http://localhost:8004';
+const ORDER_API = import.meta.env.VITE_ORDER_API || 'http://localhost:8000';
 
 function AdminLogin({ onAuthed }) {
   const [username, setUsername] = useState('');
