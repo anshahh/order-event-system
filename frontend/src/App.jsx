@@ -253,9 +253,18 @@ function OrderCard({ order, token }) {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
+    // Fetch current state immediately, so the UI is correct even if SSE fails
+    fetch(`${PROJECTION_API}/orders/${order.orderId}`)
+      .then((res) => res.json())
+      .then((data) => setOrderState(data))
+      .catch((err) => console.error('Initial order state fetch failed:', err));
+
     const source = new EventSource(`${PROJECTION_API}/orders/${order.orderId}/stream`);
     source.onmessage = (event) => setOrderState(JSON.parse(event.data));
-    source.onerror = () => source.close();
+    source.onerror = (err) => {
+      console.error('SSE connection error for order', order.orderId, err, 'readyState:', source.readyState);
+      source.close();
+    };
     return () => source.close();
   }, [order.orderId]);
 
