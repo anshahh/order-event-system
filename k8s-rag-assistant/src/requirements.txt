@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+openai
+chromadb
+psycopg2-binary
+scikit-learn
