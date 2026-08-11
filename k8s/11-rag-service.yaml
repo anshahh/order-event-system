@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: rag-service
-          image: anshahh/rag-service:v3
+          image: anshahh/rag-service:v5
           imagePullPolicy: Always
           ports:
             - containerPort: 8007
