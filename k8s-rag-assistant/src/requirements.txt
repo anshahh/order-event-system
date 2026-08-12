@@ -4,3 +4,4 @@ openai
 chromadb
 psycopg2-binary
 scikit-learn
+pyjwt

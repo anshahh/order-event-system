@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: rag-service
-          image: anshahh/rag-service:v5
+          image: anshahh/rag-service:v6
           imagePullPolicy: Always
           ports:
             - containerPort: 8007
@@ -40,6 +40,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: OPENAI_API_KEY
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
             - name: DB_HOST
               value: "postgres-service"
             - name: DB_PORT

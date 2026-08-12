@@ -15,6 +15,10 @@ from vectorstore import build_index
 from rag import ask as rag_ask
 from ingest import build_chunks
 from order_agent import ask_buyer
+from admin_agent import ask_admin
+
+import jwt as pyjwt
+from fastapi import Header
 
 STATIC_DIR = Path(__file__).parent / "static"
 LOG_FILE = Path(__file__).parent / "query_log.json"
@@ -167,6 +171,43 @@ def admin_logs(limit: int = 50):
         return {"logs": []}
     logs = json.loads(LOG_FILE.read_text())
     return {"logs": list(reversed(logs))[:limit]}
+
+
+def verify_admin(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(401, "No token provided")
+    token = authorization.replace("Bearer ", "")
+    try:
+        decoded = pyjwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
+        if not decoded.get("isAdmin"):
+            raise HTTPException(403, "Admin access required")
+        return decoded
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(401, "Invalid or expired token")
+
+
+class AdminQueryRequest(BaseModel):
+    question: str
+
+
+class AdminQueryResponse(BaseModel):
+    question: str
+    answer: str
+    tool_trace: list
+
+
+@app.post("/api/admin/query", response_model=AdminQueryResponse)
+def admin_query(req: AdminQueryRequest, authorization: str = Header(None)):
+    verify_admin(authorization)
+    if not req.question.strip():
+        raise HTTPException(400, "Question cannot be empty.")
+    try:
+        result = ask_admin(req.question)
+        return AdminQueryResponse(**result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(500, f"Admin assistant failed: {e}")
 
 
 @app.get("/")
