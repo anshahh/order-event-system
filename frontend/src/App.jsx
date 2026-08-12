@@ -186,8 +186,27 @@ function ProductDetailModal({ product, token, onClose, onOrderPlaced }) {
   );
 }
 
-function ProductCard({ product, onClick }) {
+function ProductCard({ product, onClick, token, wishlistIds, onWishlistToggle }) {
   const outOfStock = product.stock <= 0;
+  const isWishlisted = wishlistIds && wishlistIds.has(product.id);
+
+  async function toggleWishlist(e) {
+    e.stopPropagation();
+    if (isWishlisted) {
+      await fetch(`${ORDER_API}/wishlist/${product.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } else {
+      await fetch(`${ORDER_API}/wishlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ productId: product.id }),
+      });
+    }
+    onWishlistToggle();
+  }
+
   return (
     <div className="product-card-wide" onClick={onClick}>
       <div className="product-thumb">
@@ -203,7 +222,60 @@ function ProductCard({ product, onClick }) {
           {outOfStock ? 'Out of stock' : `${product.stock} in stock`}
         </p>
       </div>
+      <button className="wishlist-heart" onClick={toggleWishlist} aria-label="Toggle wishlist">
+        {isWishlisted ? 'Saved' : 'Save'}
+      </button>
       <span className="price">${Number(product.price).toFixed(2)}</span>
+    </div>
+  );
+}
+
+function WishlistTab({ token }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function loadWishlist() {
+    setLoading(true);
+    const res = await fetch(`${ORDER_API}/wishlist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setItems(await res.json());
+    setLoading(false);
+  }
+
+  useEffect(() => { loadWishlist(); }, []);
+
+  async function removeItem(productId) {
+    await fetch(`${ORDER_API}/wishlist/${productId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    loadWishlist();
+  }
+
+  if (loading) return <div className="panel"><p className="empty-state">Loading wishlist...</p></div>;
+
+  if (items.length === 0) {
+    return <div className="panel"><p className="empty-state">No saved items yet. Tap Save on any product to add it here.</p></div>;
+  }
+
+  return (
+    <div className="catalog-list">
+      {items.map((p) => (
+        <div key={p.id} className="product-card-wide">
+          <div className="product-thumb">
+            {p.image_url ? <img src={p.image_url} alt={p.name} /> : <span>{p.name[0]}</span>}
+          </div>
+          <div className="product-info">
+            <h3>{p.name}</h3>
+            <p className={`stock ${p.stock <= 0 ? 'out' : ''}`}>
+              {p.stock <= 0 ? 'Out of stock' : `${p.stock} in stock`}
+            </p>
+          </div>
+          <button className="wishlist-heart" onClick={() => removeItem(p.id)}>Remove</button>
+          <span className="price">${Number(p.price).toFixed(2)}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -212,6 +284,7 @@ function CatalogTab({ token, onOrderPlaced }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [wishlistIds, setWishlistIds] = useState(new Set());
 
   async function loadProducts() {
     const res = await fetch(`${ORDER_API}/products`);
@@ -219,7 +292,15 @@ function CatalogTab({ token, onOrderPlaced }) {
     setLoading(false);
   }
 
-  useEffect(() => { loadProducts(); }, []);
+  async function loadWishlist() {
+    const res = await fetch(`${ORDER_API}/wishlist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    setWishlistIds(new Set(data.map((p) => p.id)));
+  }
+
+  useEffect(() => { loadProducts(); loadWishlist(); }, []);
 
   function handleOrderPlaced(order) {
     onOrderPlaced(order);
@@ -232,7 +313,14 @@ function CatalogTab({ token, onOrderPlaced }) {
     <>
       <div className="catalog-list">
         {products.map((p) => (
-          <ProductCard key={p.id} product={p} onClick={() => setSelectedProduct(p)} />
+          <ProductCard
+            key={p.id}
+            product={p}
+            onClick={() => setSelectedProduct(p)}
+            token={token}
+            wishlistIds={wishlistIds}
+            onWishlistToggle={loadWishlist}
+          />
         ))}
       </div>
       {selectedProduct && (
@@ -495,12 +583,14 @@ function MainApp({ token, user, onLogout }) {
         <button className={tab === 'orders' ? 'active' : ''} onClick={() => setTab('orders')}>
           My Orders {orders.length > 0 && <span className="badge">{orders.length}</span>}
         </button>
+        <button className={tab === 'wishlist' ? 'active' : ''} onClick={() => setTab('wishlist')}>Wishlist</button>
         <button className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>Profile</button>
       </nav>
 
       <main className="content">
         {tab === 'catalog' && <CatalogTab token={token} onOrderPlaced={handleOrderPlaced} />}
         {tab === 'orders' && <MyOrdersTab orders={orders} token={token} />}
+        {tab === 'wishlist' && <WishlistTab token={token} />}
         {tab === 'profile' && <ProfileTab user={currentUser} token={token} onPhotoUpdated={handlePhotoUpdated} />}
       </main>
       <SupportChat username={currentUser?.username} />
