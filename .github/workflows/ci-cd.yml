@@ -1,9 +1,7 @@
 name: CI/CD Pipeline
-
 on:
   push:
     branches: [main]
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -15,7 +13,6 @@ jobs:
           - shipping-service
           - projection-service
           - frontend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,12 +33,12 @@ jobs:
           platforms: linux/amd64
           push: false
           load: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:v1
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
 
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:v1
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
           format: table
           exit-code: 0
           severity: CRITICAL,HIGH
@@ -53,4 +50,6 @@ jobs:
           context: ./${{ matrix.service }}
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:v1
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service }}:latest
