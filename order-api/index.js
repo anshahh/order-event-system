@@ -66,6 +66,50 @@ app.get('/products', async (req, res) => {
   }
 });
 
+app.post('/wishlist', requireAuth, async (req, res) => {
+  const { productId } = req.body;
+  try {
+    await pool.query(
+      'INSERT INTO wishlist (user_id, product_id) VALUES ($1, $2) ON CONFLICT (user_id, product_id) DO NOTHING',
+      [req.userId, productId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to add to wishlist' });
+  }
+});
+
+app.delete('/wishlist/:productId', requireAuth, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM wishlist WHERE user_id = $1 AND product_id = $2',
+      [req.userId, req.params.productId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to remove from wishlist' });
+  }
+});
+
+app.get('/wishlist', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.id, p.name, p.price, p.stock, p.image_url
+       FROM wishlist w
+       JOIN products p ON p.id = w.product_id
+       WHERE w.user_id = $1
+       ORDER BY w.created_at DESC`,
+      [req.userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch wishlist' });
+  }
+});
+
 app.post('/orders', requireAuth, async (req, res) => {
   const { productId, quantity } = req.body;
   const userId = req.userId;
