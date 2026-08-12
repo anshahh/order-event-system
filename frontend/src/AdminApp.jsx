@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 
 const AUTH_API = import.meta.env.VITE_AUTH_API || 'http://localhost:8004';
 const ORDER_API = import.meta.env.VITE_ORDER_API || 'http://localhost:8000';
+const SUPPORT_API = import.meta.env.VITE_SUPPORT_API || 'http://localhost:8007';
 
 function AdminLogin({ onAuthed }) {
   const [username, setUsername] = useState('');
@@ -119,6 +120,69 @@ function EditProductModal({ product, token, onClose, onSaved }) {
   );
 }
 
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+const CHART_COLORS = ['#7A2E22', '#A8503D', '#C97B63', '#E3A896', '#F4E9E6'];
+
+function AdminChat({ token }) {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function send() {
+    const q = input.trim();
+    if (!q || loading) return;
+    setInput('');
+    setMessages((m) => [...m, { role: 'user', text: q }]);
+    setLoading(true);
+    try {
+      const res = await fetch(`${SUPPORT_API}/api/admin/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ question: q }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Something went wrong');
+      setMessages((m) => [...m, { role: 'assistant', text: data.answer }]);
+    } catch (err) {
+      setMessages((m) => [...m, { role: 'assistant', text: 'Sorry, analytics assistant is unavailable right now.', error: true }]);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <>
+      <button className="support-fab" onClick={() => setOpen(!open)} aria-label="Analytics assistant">
+        {open ? 'Close' : 'Ask Analytics'}
+      </button>
+      {open && (
+        <div className="support-panel">
+          <div className="support-header">Analytics Assistant</div>
+          <div className="support-messages">
+            {messages.length === 0 && (
+              <div className="support-empty">Ask about revenue, top products, stock, or which products are commonly co-purchased.</div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`support-msg ${m.role}${m.error ? ' error' : ''}`}>{m.text}</div>
+            ))}
+            {loading && <div className="support-msg assistant">...</div>}
+          </div>
+          <div className="support-input-row">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && send()}
+              placeholder="e.g. what are our top products?"
+            />
+            <button onClick={send} disabled={loading}>Send</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function AdminDashboard({ token, onLogout }) {
   const [data, setData] = useState(null);
   const [products, setProducts] = useState([]);
@@ -163,26 +227,49 @@ function AdminDashboard({ token, onLogout }) {
       <main className="content">
         <div className="funnel-grid" style={{ marginBottom: 20 }}>
           <div className="funnel-card">
-            <span className="funnel-count" style={{ color: '#22c55e' }}>${Number(data.totalRevenue).toFixed(0)}</span>
+            <span className="funnel-count" style={{ color: '#2E9E6B' }}>${Number(data.totalRevenue).toFixed(0)}</span>
             <span className="funnel-label">Total revenue</span>
           </div>
           <div className="funnel-card">
-            <span className="funnel-count" style={{ color: '#3b82f6' }}>{data.totalOrders}</span>
+            <span className="funnel-count" style={{ color: '#7A2E22' }}>{data.totalOrders}</span>
             <span className="funnel-label">Total orders</span>
           </div>
           {data.statusBreakdown.filter((s) => s.status !== 'PAYMENT_FAILED').map((s) => (
             <div className="funnel-card" key={s.status}>
-              <span className="funnel-count" style={{ color: '#a5b4fc' }}>{s.count}</span>
+              <span className="funnel-count" style={{ color: '#A8503D' }}>{s.count}</span>
               <span className="funnel-label">{s.status.replaceAll('_', ' ')}</span>
             </div>
           ))}
         </div>
 
         <div className="panel" style={{ marginBottom: 16 }}>
+          <h2>Revenue trend (last 14 days)</h2>
+          <div style={{ marginTop: 14, height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[...data.dailySales].reverse()}>
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={(d) => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  tick={{ fontSize: 11, fill: '#746E68' }}
+                  axisLine={{ stroke: '#E3E1DE' }}
+                />
+                <YAxis tick={{ fontSize: 11, fill: '#746E68' }} axisLine={{ stroke: '#E3E1DE' }} />
+                <Tooltip
+                  formatter={(value) => [`${Number(value).toFixed(0)}`, 'Revenue']}
+                  labelFormatter={(d) => new Date(d).toLocaleDateString()}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E3E1DE' }}
+                />
+                <Line type="monotone" dataKey="revenue" stroke="#7A2E22" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginBottom: 16 }}>
           <h2>Daily sales (last 14 days)</h2>
           <div style={{ marginTop: 14 }}>
             {data.dailySales.map((d) => (
-              <BarRow key={d.day} label={new Date(d.day).toLocaleDateString()} value={Number(d.revenue).toFixed(0)} max={maxDailyRevenue} color="#6366f1" prefix="$" />
+              <BarRow key={d.day} label={new Date(d.day).toLocaleDateString()} value={Number(d.revenue).toFixed(0)} max={maxDailyRevenue} color="#7A2E22" prefix="$" />
             ))}
           </div>
         </div>
@@ -201,7 +288,7 @@ function AdminDashboard({ token, onLogout }) {
           <div style={{ marginTop: 14 }}>
             {products.map((p) => (
               <div key={p.id} className="admin-product-row">
-                <BarRow label={p.name} value={p.stock} max={maxStock} color={p.stock < 5 ? '#f87171' : '#3b82f6'} />
+                <BarRow label={p.name} value={p.stock} max={maxStock} color={p.stock < 5 ? '#C0392B' : '#7A2E22'} />
                 <button className="link-button" onClick={() => setEditingProduct(p)}>Edit</button>
               </div>
             ))}
@@ -217,6 +304,7 @@ function AdminDashboard({ token, onLogout }) {
           onSaved={loadProducts}
         />
       )}
+      <AdminChat token={token} />
     </div>
   );
 }
